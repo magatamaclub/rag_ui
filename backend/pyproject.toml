@@ -1,0 +1,24 @@
+
+[tool.poetry]
+name = "rag-ui-backend"
+version = "0.1.0"
+description = ""
+authors = ["Gemini <gemini@google.com>"]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fastapi = "^0.111.0"
+uvicorn = {extras = ["standard"], version = "^0.30.1"}
+langchain = "^0.2.6"
+psycopg2-binary = "^2.9.9"
+pgvector = "^0.2.5"
+requests = "^2.32.3"
+sqlalchemy = "^2.0.31"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.3"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
