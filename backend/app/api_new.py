@@ -52,7 +52,7 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
 async def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
     """Authenticate user and return access token."""
     user = authenticate_user(db, user_credentials.username, user_credentials.password)
-    if not user or user is False:
+    if not user:
         raise HTTPException(
             status_code=401,
             detail="Incorrect username or password",
@@ -61,7 +61,7 @@ async def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
 
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": str(user.username)}, expires_delta=access_token_expires
+        data={"sub": user.username}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
@@ -105,18 +105,12 @@ async def get_dify_config(db: Session = Depends(get_db)):
 
 
 @router.on_event("startup")
-async def load_dify_config_on_startup():
-    """加载Dify配置到全局变量（启动时）"""
+async def load_dify_config_on_startup(db: Session = Depends(get_db)):
     global DIFY_API_URL, DIFY_API_KEY
-    try:
-        # 跳过数据库访问，避免psycopg2内存错误
-        print("⚠️ Skipping Dify config loading due to database driver issues")
-        # 设置默认值
-        DIFY_API_URL = "http://localhost:5000"
-        DIFY_API_KEY = "default-key"
-        print(f"🔧 Using default Dify config: {DIFY_API_URL}")
-    except Exception as e:
-        print(f"⚠️ Could not load Dify config: {e}")
+    config = db.query(DifyConfig).first()
+    if config:
+        DIFY_API_URL = config.api_url
+        DIFY_API_KEY = config.api_key
 
 
 # Document and Chat Endpoints (Protected)
@@ -133,10 +127,10 @@ async def upload_document(
 
     url = f"{DIFY_API_URL}/files/upload"
     headers = {"Authorization": f"Bearer {DIFY_API_KEY}"}
-
-    file_content = await file.read()
-    files = {"file": (file.filename, file_content, file.content_type)}
-    data = {"user": str(getattr(current_user, "username", "unknown"))}
+    files = {"file": (file.filename, await file.read(), file.content_type)}
+    data = {
+        "user": f"{current_user.username}"  # Use authenticated user
+    }
 
     try:
         response = requests.post(url, headers=headers, files=files, data=data)
@@ -172,7 +166,7 @@ async def chat(request: Request, current_user: User = Depends(get_current_active
         "inputs": {},
         "query": query,
         "response_mode": "streaming",
-        "user": str(getattr(current_user, "username", "unknown")),
+        "user": f"{current_user.username}",  # Use authenticated user
         "conversation_id": conversation_id if conversation_id else "",
     }
 

@@ -104,7 +104,52 @@ rag_ui_ant_design/
 └── README.md                     # 项目说明文档 (当前文件)
 ```
 
-## 6. 快速启动 (使用 Docker Compose)
+## 6. 环境变量配置
+
+项目支持通过环境变量进行配置，便于不同环境的部署。
+
+### 环境变量说明
+
+创建 `.env` 文件来配置应用参数：
+
+```bash
+# 数据库配置
+DB_HOST=localhost          # 数据库主机地址
+DB_PORT=5432              # 数据库端口
+DB_NAME=rag_db            # 数据库名称
+DB_USER=user              # 数据库用户名
+DB_PASSWORD=password      # 数据库密码
+
+# 应用配置
+APP_HOST=0.0.0.0          # 应用监听地址
+APP_PORT=8000             # 应用端口
+APP_DEBUG=false           # 调试模式开关
+```
+
+### Docker 环境变量
+
+在 Docker Compose 中，您可以通过以下方式传入环境变量：
+
+1. **使用 .env 文件**（推荐）：
+   ```bash
+   cp .env.example .env
+   # 编辑 .env 文件中的配置
+   docker-compose up --build
+   ```
+
+2. **通过命令行传入**：
+   ```bash
+   DB_PASSWORD=mypassword APP_PORT=9000 docker-compose up --build
+   ```
+
+3. **设置环境变量**：
+   ```bash
+   export DB_PASSWORD=mypassword
+   export APP_PORT=9000
+   docker-compose up --build
+   ```
+
+## 7. 快速启动 (使用 Docker Compose)
 
 1.  **停止所有正在运行的开发服务器**（如果之前有启动的话，例如 `pnpm dev` 和 `uvicorn`）。
 2.  在项目根目录 `rag_ui_ant_design` 下，打开终端并运行：
@@ -116,7 +161,7 @@ rag_ui_ant_design/
 3.  等待所有服务启动。这可能需要一些时间，特别是首次构建时。
 4.  在浏览器中访问 `http://localhost`。
 
-## 7. 使用指南
+## 8. 使用指南
 
 1.  **配置 Dify API:**
     *   访问 `http://localhost` 后，点击左侧菜单栏的 **"Dify Config"**。
@@ -134,7 +179,7 @@ rag_ui_ant_design/
     *   点击左侧的 **"New Chat"** 按钮创建新会话。
     *   点击左侧列表中的会话标题可以切换会话。
 
-## 8. 测试
+## 9. 测试
 
 ### 后端测试
 
@@ -150,7 +195,7 @@ PYTHONPATH=. pytest
 
 目前前端尚未编写 Jest/React Testing Library 测试用例。
 
-## 9. 未来增强
+## 10. 未来增强
 
 *   **后端会话持久化:** 将聊天会话记录存储在后端数据库中，实现更可靠的会话管理和跨设备同步。
 *   **用户认证/授权:** 引入用户管理系统，保护 API 接口和数据。

@@ -2,9 +2,9 @@
 [tool.poetry]
 name = "rag-ui-backend"
 version = "0.1.0"
-description = ""
+description = "RAG UI Backend with FastAPI"
 authors = ["Gemini <gemini@google.com>"]
-package-mode = false
+packages = [{include = "app"}]
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -15,6 +15,11 @@ psycopg2-binary = "^2.9.9"
 pgvector = "^0.2.5"
 requests = "^2.32.3"
 sqlalchemy = "^2.0.31"
+python-dotenv = "^1.0.0"
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+python-multipart = "^0.0.7"
+asyncpg = "^0.30.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"

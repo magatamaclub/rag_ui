@@ -1,26 +1,30 @@
 from fastapi.testclient import TestClient
 from app.main import app
-from app.database import Base, engine, get_db
+from app.database import Base, get_db
 from app.models import DifyConfig
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
-import json
 import pytest
+import os
+
+# Override environment variables for testing
+os.environ["DB_HOST"] = "test"
+os.environ["DB_NAME"] = "test_db"
+os.environ["APP_DEBUG"] = "true"
 
 # Setup a test database
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 
-engine = create_engine(
+test_engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
-    connect_args={
-        "check_same_thread": False
-    },
+    connect_args={"check_same_thread": False},
     poolclass=StaticPool,
 )
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
 
-Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=test_engine)
+
 
 def override_get_db():
     try:
@@ -29,27 +33,27 @@ def override_get_db():
     finally:
         db.close()
 
+
 app.dependency_overrides[get_db] = override_get_db
 
 client = TestClient(app)
 
+
 @pytest.fixture(name="db_session")
 def db_session_fixture():
-    Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=test_engine)
     db = TestingSessionLocal()
     try:
         yield db
     finally:
         db.close()
-        Base.metadata.drop_all(bind=engine)
+        Base.metadata.drop_all(bind=test_engine)
+
 
 def test_set_dify_config(db_session):
     response = client.post(
         "/api/v1/dify-config",
-        json={
-            "api_url": "http://test-dify.com/v1",
-            "api_key": "test-api-key"
-        }
+        json={"api_url": "http://test-dify.com/v1", "api_key": "test-api-key"},
     )
     assert response.status_code == 200
     assert response.json() == {"message": "Dify configuration saved successfully"}
@@ -58,38 +62,39 @@ def test_set_dify_config(db_session):
     assert config.api_url == "http://test-dify.com/v1"
     assert config.api_key == "test-api-key"
 
+
 def test_get_dify_config(db_session):
     client.post(
         "/api/v1/dify-config",
-        json={
-            "api_url": "http://test-dify.com/v1",
-            "api_key": "test-api-key"
-        }
+        json={"api_url": "http://test-dify.com/v1", "api_key": "test-api-key"},
     )
     response = client.get("/api/v1/dify-config")
     assert response.status_code == 200
-    assert response.json() == {"api_url": "http://test-dify.com/v1", "api_key": "test-api-key"}
+    assert response.json() == {
+        "api_url": "http://test-dify.com/v1",
+        "api_key": "test-api-key",
+    }
+
 
 def test_upload_document_no_config(mocker):
     # Ensure DIFY_API_URL and DIFY_API_KEY are None for this test
-    mocker.patch('app.api.DIFY_API_URL', None)
-    mocker.patch('app.api.DIFY_API_KEY', None)
+    mocker.patch("app.api.DIFY_API_URL", None)
+    mocker.patch("app.api.DIFY_API_KEY", None)
 
     response = client.post(
-        "/api/v1/documents",
-        files={"file": ("test.txt", b"hello world", "text/plain")}
+        "/api/v1/documents", files={"file": ("test.txt", b"hello world", "text/plain")}
     )
     assert response.status_code == 400
-    assert response.json() == {"detail": "Dify API configuration is missing. Please set it via /api/v1/dify-config."}
+    assert response.json() == {
+        "detail": "Dify API configuration is missing. Please set it via /api/v1/dify-config."
+    }
+
 
 def test_upload_document(mocker, db_session):
     # Set Dify config in DB for this test
     client.post(
         "/api/v1/dify-config",
-        json={
-            "api_url": "http://test-dify.com/v1",
-            "api_key": "test-api-key"
-        }
+        json={"api_url": "http://test-dify.com/v1", "api_key": "test-api-key"},
     )
     # Mock the requests.post call for document upload
     mock_post = mocker.patch("requests.post")
@@ -100,14 +105,13 @@ def test_upload_document(mocker, db_session):
         "size": 11,
         "type": "text/plain",
         "created_by": "gemini-user",
-        "created_at": "2025-07-15T12:00:00Z"
+        "created_at": "2025-07-15T12:00:00Z",
     }
 
     response = client.post(
-        "/api/v1/documents",
-        files={"file": ("test.txt", b"hello world", "text/plain")}
+        "/api/v1/documents", files={"file": ("test.txt", b"hello world", "text/plain")}
     )
-    
+
     assert response.status_code == 200
     assert response.json()["name"] == "test.txt"
     assert response.json()["id"] == "dify-file-id"
@@ -118,29 +122,27 @@ def test_upload_document(mocker, db_session):
     assert args[0] == "http://test-dify.com/v1/files/upload"
     assert kwargs["headers"]["Authorization"] == "Bearer test-api-key"
 
+
 def test_chat_streaming_no_config(mocker):
     # Ensure DIFY_API_URL and DIFY_API_KEY are None for this test
-    mocker.patch('app.api.DIFY_API_URL', None)
-    mocker.patch('app.api.DIFY_API_KEY', None)
+    mocker.patch("app.api.DIFY_API_URL", None)
+    mocker.patch("app.api.DIFY_API_KEY", None)
 
     response = client.post(
         "/api/v1/chat",
-        json={
-            "query": "Hello Dify",
-            "conversation_id": "test-conversation-id"
-        }
+        json={"query": "Hello Dify", "conversation_id": "test-conversation-id"},
     )
     assert response.status_code == 400
-    assert response.json() == {"detail": "Dify API configuration is missing. Please set it via /api/v1/dify-config."}
+    assert response.json() == {
+        "detail": "Dify API configuration is missing. Please set it via /api/v1/dify-config."
+    }
+
 
 def test_chat_streaming(mocker, db_session):
     # Set Dify config in DB for this test
     client.post(
         "/api/v1/dify-config",
-        json={
-            "api_url": "http://test-dify.com/v1",
-            "api_key": "test-api-key"
-        }
+        json={"api_url": "http://test-dify.com/v1", "api_key": "test-api-key"},
     )
     # Mock the requests.post call for chat streaming
     mock_response_iter = mocker.MagicMock()
@@ -148,7 +150,7 @@ def test_chat_streaming(mocker, db_session):
         b'data: {"event": "llm_start", "id": "123"}\n\n',
         b'data: {"event": "text_chunk", "answer": "Hello"}\n\n',
         b'data: {"event": "text_chunk", "answer": " world"}\n\n',
-        b'data: {"event": "llm_end", "id": "123"}\n\n'
+        b'data: {"event": "llm_end", "id": "123"}\n\n',
     ]
     mock_response_iter.status_code = 200
     mock_response_iter.__enter__.return_value = mock_response_iter
@@ -158,10 +160,7 @@ def test_chat_streaming(mocker, db_session):
 
     response = client.post(
         "/api/v1/chat",
-        json={
-            "query": "Hello Dify",
-            "conversation_id": "test-conversation-id"
-        }
+        json={"query": "Hello Dify", "conversation_id": "test-conversation-id"},
     )
 
     assert response.status_code == 200
@@ -171,12 +170,12 @@ def test_chat_streaming(mocker, db_session):
     received_chunks = []
     for chunk in response.iter_lines():
         received_chunks.append(chunk)
-    
+
     expected_chunks = [
         'data: {"event": "llm_start", "id": "123"}',
         'data: {"event": "text_chunk", "answer": "Hello"}',
         'data: {"event": "text_chunk", "answer": " world"}',
-        'data: {"event": "llm_end", "id": "123"}'
+        'data: {"event": "llm_end", "id": "123"}',
     ]
     # Filter out empty strings that iter_lines() might produce from double newlines
     received_chunks = [chunk for chunk in received_chunks if chunk]

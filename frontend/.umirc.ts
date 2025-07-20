@@ -1,54 +1,39 @@
 
-import { defineConfig } from "umi";
+import { defineConfig } from 'umi';
 
 export default defineConfig({
-  plugins: [
-    '@umijs/plugins/dist/access',
-    '@umijs/plugins/dist/antd',
-    '@umijs/plugins/dist/initial-state',
-    '@umijs/plugins/dist/layout',
-    '@umijs/plugins/dist/model',
-    '@umijs/plugins/dist/request'
-  ],
-  antd: {},
-  access: {},
-  model: {},
-  initialState: {},
-  request: {},
-  layout: {
-    title: "RAG UI",
-  },
   routes: [
+    {
+      path: '/login',
+      component: '@/pages/LoginPage',
+    },
     {
       path: '/',
       redirect: '/chat',
     },
     {
-      path: '/home',
-      component: 'IndexPage',
-      name: 'Home',
-    },
-    {
       path: '/chat',
-      component: 'ChatPage',
-      name: 'Chat',
+      component: '@/pages/ChatPage',
     },
     {
       path: '/upload',
-      component: 'UploadPage',
-      name: 'Upload Documents',
+      component: '@/pages/UploadPage',
     },
     {
       path: '/dify-config',
-      component: 'DifyConfigPage',
-      name: 'Dify Config',
+      component: '@/pages/DifyConfigPage',
+    },
+    {
+      path: '/home',
+      component: '@/pages/IndexPage',
     },
   ],
-  npmClient: 'pnpm',
   proxy: {
     '/api': {
-      'target': 'http://localhost:8000',
-      'changeOrigin': true,
+      target: 'http://localhost:8000',
+      changeOrigin: true,
+      pathRewrite: { '^/api': '/api' },
     },
   },
+  title: 'RAG UI 系统',
 });
