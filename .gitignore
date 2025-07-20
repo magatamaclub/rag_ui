@@ -1,3 +1,10 @@
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
 # Logs
 logs
 *.log
@@ -139,3 +146,213 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 frontend/node_modules
+
+# Python 后端相关
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Poetry
+# poetry.lock  # 通常建议保留 poetry.lock 以确保依赖版本一致性
+
+# PyInstaller
+*.manifest
+*.spec
+
+# 单元测试 / 覆盖率报告
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# pdm
+.pdm.toml
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# 虚拟环境
+.venv/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# UmiJS 特定文件
+.umi/
+.umi-production/
+.umi-test/
+.cache/
+
+# IDE 和编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# PyCharm
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# VS Code（项目特定的设置可能不需要提交）
+.vscode/settings.json
+.vscode/tasks.json
+.vscode/launch.json
+.vscode/extensions.json
+.vscode/*.code-snippets
+
+# Local History for Visual Studio Code
+.history/
+
+# Built Visual Studio Code Extensions
+*.vsix
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# 数据库文件
+*.db
+*.sqlite
+*.sqlite3
+
+# Docker 相关
+.dockerignore
+
+# 项目特定的文件
+# 备份文件
+*.bak
+*.backup
+
+# 临时文件
+tmp/
+temp/
+*.tmp
+
+# 压缩文件（通常不需要版本控制）
+*.zip
+*.tar.gz
+*.rar
+
+# 测试和构建文件
+test-results/
+playwright-report/
+test-results.xml
+
+# pnpm 相关
+.pnpm-debug.log*
+
+# 本地配置文件
+config.local.js
+.umirc.local.ts
+
+# 认证和启动脚本的可执行权限会被保留，但不需要特殊处理
