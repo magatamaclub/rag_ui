@@ -1,0 +1,35 @@
+{
+  "name": "rag-ui-ant-design",
+  "version": "1.0.0",
+  "description": "RAG UI application with Ant Design and Dify integration",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "start": "npm run dev",
+    "backend:dev": "cd backend && python -m uvicorn app.main:app --reload",
+    "backend:start": "cd backend && ./start_backend.sh",
+    "test:backend": "cd backend && python -m pytest",
+    "test:frontend": "cd frontend && npm test",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down"
+  },
+  "volta": {
+    "node": "20.19.4",
+    "npm": "10.8.2"
+  },
+  "keywords": [
+    "rag",
+    "chatbot",
+    "dify",
+    "react",
+    "fastapi",
+    "ant-design"
+  ],
+  "author": "",
+  "license": "ISC"
+}

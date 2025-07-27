@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import logging
@@ -34,15 +34,12 @@ def check_database_connection() -> bool:
     """检查数据库连接是否正常"""
     try:
         logger.info("🔍 Checking database connection...")
-        # 先尝试创建engine（不进行实际连接）
-        if engine is None:
-            logger.error("❌ Database engine not initialized")
-            return False
 
-        logger.info("✅ Database engine created successfully")
-        # 跳过实际的连接测试，避免psycopg2内存错误
-        logger.warning("⚠️ Skipping actual connection test due to driver issues")
-        return True
+        # 测试数据库连接
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+            logger.info("✅ Database connection successful")
+            return True
 
     except Exception as e:
         logger.error(f"❌ Database connection check failed: {e}")
@@ -53,9 +50,23 @@ def check_tables_exist() -> bool:
     """检查数据库表是否存在"""
     try:
         logger.info("🔍 Checking if database tables exist...")
-        # 跳过实际的表检查，避免内存错误
-        logger.warning("⚠️ Skipping table check due to driver issues")
-        return False  # 始终返回False，这样会尝试初始化表
+
+        # 检查用户表是否存在
+        with engine.connect() as connection:
+            query = text(
+                "SELECT EXISTS (SELECT FROM information_schema.tables "
+                "WHERE table_name = 'users')"
+            )
+            result = connection.execute(query)
+            exists = result.scalar()
+
+            if exists:
+                logger.info("✅ Database tables exist")
+                return True
+            else:
+                logger.info("ℹ️ Database tables do not exist, will create them")
+                return False
+
     except Exception as e:
         logger.error(f"❌ Error checking tables: {e}")
         return False
@@ -70,17 +81,15 @@ def create_admin_user():
         db = SessionLocal()
         try:
             # 检查是否已存在管理员用户
-            admin_user = (
-                db.query(User).filter(User.role == UserRole.ADMIN).first()
-            )
+            admin_user = db.query(User).filter(User.role == UserRole.ADMIN).first()
             if admin_user:
                 logger.info("✅ Admin user already exists")
                 return
 
-            # 创建默认管理员用户
-            admin_username = "admin"
-            admin_email = "admin@ragui.com"
-            admin_password = "admin123"  # 在生产环境中应该使用更安全的密码
+            # 使用配置文件中的默认管理员设置
+            admin_username = settings.DEFAULT_ADMIN_USERNAME
+            admin_email = settings.DEFAULT_ADMIN_EMAIL
+            admin_password = settings.DEFAULT_ADMIN_PASSWORD
 
             hashed_password = get_password_hash(admin_password)
             admin_user = User(
@@ -94,31 +103,40 @@ def create_admin_user():
             db.commit()
             logger.info("✅ Default admin user created successfully")
             logger.info(f"   Username: {admin_username}")
-            logger.info(f"   Password: {admin_password}")
-            logger.info("   Please change the default password after first login!")
+            logger.info(f"   Email: {admin_email}")
+            logger.info("   Please change the default password after login!")
 
         finally:
             db.close()
 
     except Exception as e:
         logger.error(f"❌ Error creating admin user: {e}")
+        raise
 
 
 def init_database():
     """初始化数据库，创建表结构"""
     try:
         logger.info("🏗️ Creating missing tables...")
-        # 跳过实际的表创建，避免psycopg2内存错误
-        logger.warning("⚠️ Skipping table creation due to driver issues")
 
-        # 尝试创建管理员用户
-        try:
-            create_admin_user()
-        except Exception as e:
-            logger.warning(f"⚠️ Could not create admin user: {e}")
+        # 检查数据库连接
+        if not check_database_connection():
+            raise Exception("Database connection failed")
 
-        logger.info("🎉 Database initialization completed (skipped - driver issues)")
+        # 检查表是否存在，如果不存在则创建
+        if not check_tables_exist():
+            # 导入模型以确保它们被注册
+            from . import models  # noqa: F401
+
+            # 创建所有表
+            Base.metadata.create_all(bind=engine)
+            logger.info("✅ Database tables created successfully")
+
+        # 创建管理员用户
+        create_admin_user()
+
+        logger.info("🎉 Database initialization completed successfully")
 
     except Exception as e:
-        logger.error(f"❌ Error creating tables: {e}")
+        logger.error(f"❌ Error initializing database: {e}")
         raise

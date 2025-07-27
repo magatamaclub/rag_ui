@@ -1,9 +1,9 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Request, Depends
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import timedelta
-from typing import List
+from typing import List, Optional
 import requests
 
 from .database import get_db
@@ -36,12 +36,45 @@ DIFY_API_KEY = None
 
 
 class DifyConfigCreate(BaseModel):
-    api_url: str
-    api_key: str
+    """Dify配置创建模型"""
+
+    api_url: str = Field(
+        ..., description="Dify API地址", example="https://api.dify.ai/v1"
+    )
+    api_key: str = Field(
+        ..., description="Dify API密钥", example="app-xxxxxxxxxxxxxxxxxx"
+    )
+
+
+class ChatRequest(BaseModel):
+    """聊天请求模型"""
+
+    query: str = Field(
+        ..., description="用户的问题或消息", example="你好，请介绍一下你的功能"
+    )
+    conversation_id: Optional[str] = Field(
+        None, description="对话ID，用于维持对话上下文", example="conv_123456789"
+    )
 
 
 # User Authentication Endpoints
-@router.post("/auth/register", response_model=UserResponse)
+@router.post(
+    "/auth/register",
+    response_model=UserResponse,
+    tags=["authentication"],
+    summary="用户注册",
+    description="""
+    创建新的用户账户。支持以下功能：
+    - 用户名和邮箱唯一性验证
+    - 密码安全存储（BCrypt加密）
+    - 角色分配（USER/ADMIN）
+    - 账户激活状态设置
+    """,
+    responses={
+        201: {"description": "用户创建成功"},
+        400: {"description": "用户名或邮箱已存在"},
+    },
+)
 async def register(user: UserCreate, db: Session = Depends(get_db)):
     """Register a new user."""
     # Check if user already exists
@@ -59,7 +92,24 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
     return db_user
 
 
-@router.post("/auth/login", response_model=Token)
+@router.post(
+    "/auth/login",
+    response_model=Token,
+    tags=["authentication"],
+    summary="用户登录",
+    description="""
+    验证用户凭据并返回JWT访问令牌。
+    
+    使用说明：
+    1. 提供有效的用户名和密码
+    2. 获取JWT访问令牌
+    3. 在后续请求中携带令牌：Authorization: Bearer <token>
+    """,
+    responses={
+        200: {"description": "登录成功，返回访问令牌"},
+        401: {"description": "用户名或密码错误"},
+    },
+)
 async def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
     """Authenticate user and return access token."""
     user = authenticate_user(db, user_credentials.username, user_credentials.password)
@@ -78,7 +128,25 @@ async def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@router.get("/auth/me", response_model=UserResponse)
+@router.get(
+    "/auth/me",
+    response_model=UserResponse,
+    tags=["authentication"],
+    summary="获取当前用户信息",
+    description="""
+    获取当前登录用户的详细信息。
+    
+    返回包括：
+    - 用户基本信息
+    - 用户角色和权限
+    - 账户创建和更新时间
+    - 账户状态
+    """,
+    responses={
+        200: {"description": "用户信息获取成功"},
+        401: {"description": "未认证 - 需要有效的JWT令牌"},
+    },
+)
 async def get_current_user_info(current_user: User = Depends(get_current_active_user)):
     """Get current user information."""
     return current_user

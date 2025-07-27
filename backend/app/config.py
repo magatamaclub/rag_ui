@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from typing import Optional
+from urllib.parse import quote_plus
 from dotenv import load_dotenv
 
 # Get the project root directory (two levels up from this file)
@@ -66,8 +67,12 @@ class Settings:
         """Get database URL from environment or construct from components."""
         if self._database_url:
             return self._database_url
+
+        # URL encode password to handle special characters
+        encoded_password = quote_plus(self.DB_PASSWORD)
+
         return (
-            f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}"
+            f"postgresql://{self.DB_USER}:{encoded_password}"
             f"@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
         )
 
