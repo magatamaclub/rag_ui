@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from app.api import router as api_router
+from app.database_endpoints import db_router
 from app.database import get_db
 from app.config import settings
 from app.models import User, UserRole
@@ -100,6 +101,7 @@ async def startup_event():
 
 
 app.include_router(api_router, prefix="/api/v1")
+app.include_router(db_router, prefix="/api/v1")
 
 # 配置自定义OpenAPI模式
 app.openapi = lambda: custom_openapi_schema(app)

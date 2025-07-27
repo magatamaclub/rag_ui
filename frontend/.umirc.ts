@@ -4,6 +4,10 @@ import { defineConfig } from 'umi';
 export default defineConfig({
   routes: [
     {
+      path: '/initialize',
+      component: '@/pages/InitializePage',
+    },
+    {
       path: '/login',
       component: '@/pages/LoginPage',
     },
@@ -34,7 +38,7 @@ export default defineConfig({
   ],
   proxy: {
     '/api': {
-      target: 'http://localhost:8000',
+      target: 'http://localhost:8001',
       changeOrigin: true,
       pathRewrite: { '^/api': '/api' },
     },
