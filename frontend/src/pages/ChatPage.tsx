@@ -10,6 +10,7 @@ import {
   Space,
   Dropdown,
   message,
+  Select,
 } from "antd";
 import {
   SendOutlined,
@@ -17,6 +18,7 @@ import {
   MessageOutlined,
   UserOutlined,
   LogoutOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 import {
   authenticatedRequest,
@@ -27,6 +29,7 @@ import {
 
 const { Sider, Content, Header } = Layout;
 const { TextArea } = Input;
+const { Option } = Select;
 
 interface Message {
   id: string;
@@ -47,8 +50,19 @@ interface Conversation {
   retrieverResults?: RetrieverResult[];
 }
 
+interface DifyApp {
+  id: number;
+  name: string;
+  app_type: string;
+  api_url: string;
+  description?: string;
+  is_active: boolean;
+}
+
 const ChatPage: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
+  const [difyApps, setDifyApps] = useState<DifyApp[]>([]);
+  const [selectedAppId, setSelectedAppId] = useState<number | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>(() => {
     const savedConversations = localStorage.getItem("chatConversations");
     return savedConversations
@@ -80,16 +94,27 @@ const ChatPage: React.FC = () => {
   };
 
   useEffect(() => {
-    // 获取用户信息
-    const loadUser = async () => {
+    // 获取用户信息和Dify应用列表
+    const loadUserAndApps = async () => {
       try {
         const currentUser = await getCurrentUser();
         setUser(currentUser);
+
+        // 加载Dify应用
+        const appsResponse = await authenticatedRequest("/api/v1/dify-apps");
+        if (appsResponse.ok) {
+          const apps = await appsResponse.json();
+          setDifyApps(apps);
+          // 默认选择第一个应用
+          if (apps.length > 0) {
+            setSelectedAppId(apps[0].id);
+          }
+        }
       } catch (error) {
-        console.error("获取用户信息失败:", error);
+        console.error("获取用户信息或应用列表失败:", error);
       }
     };
-    loadUser();
+    loadUserAndApps();
   }, []);
 
   useEffect(() => {
@@ -98,6 +123,11 @@ const ChatPage: React.FC = () => {
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
+
+    if (!selectedAppId) {
+      message.error("请先选择一个Dify应用");
+      return;
+    }
 
     const newMessage: Message = {
       id: Date.now().toString(),
@@ -131,16 +161,19 @@ const ChatPage: React.FC = () => {
     );
 
     try {
-      const response = await authenticatedRequest("/api/v1/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          query: newMessage.text,
-          conversation_id: currentConversationId,
-        }),
-      });
+      const response = await authenticatedRequest(
+        `/api/v1/chat/app/${selectedAppId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            query: newMessage.text,
+            conversation_id: currentConversationId,
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -266,6 +299,16 @@ const ChatPage: React.FC = () => {
       icon: <UserOutlined />,
       label: user?.username || "用户",
     },
+    ...(user?.role === "admin"
+      ? [
+          {
+            key: "manage-apps",
+            icon: <SettingOutlined />,
+            label: "管理Dify应用",
+            onClick: () => (window.location.href = "/dify-app-manage"),
+          },
+        ]
+      : []),
     {
       key: "logout",
       icon: <LogoutOutlined />,
@@ -286,7 +329,31 @@ const ChatPage: React.FC = () => {
           borderBottom: "1px solid #f0f0f0",
         }}
       >
-        <h2 style={{ margin: 0, color: "#1890ff" }}>RAG UI 聊天系统</h2>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <h2 style={{ margin: 0, color: "#1890ff" }}>RAG UI 聊天系统</h2>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={handleNewChat}
+          >
+            新对话
+          </Button>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span>选择应用:</span>
+            <Select
+              style={{ width: 200 }}
+              placeholder="选择Dify应用"
+              value={selectedAppId}
+              onChange={setSelectedAppId}
+            >
+              {difyApps.map((app) => (
+                <Option key={app.id} value={app.id}>
+                  {app.name} ({app.app_type})
+                </Option>
+              ))}
+            </Select>
+          </div>
+        </div>
         {user && (
           <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
             <Button type="text" icon={<UserOutlined />}>
@@ -295,34 +362,6 @@ const ChatPage: React.FC = () => {
           </Dropdown>
         )}
       </Header>
-      <Sider
-        width={250}
-        theme="light"
-        style={{ borderRight: "1px solid #f0f0f0" }}
-      >
-        <div style={{ padding: "16px", textAlign: "center" }}>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            block
-            onClick={handleNewChat}
-          >
-            New Chat
-          </Button>
-        </div>
-        <Menu
-          mode="inline"
-          selectedKeys={[currentConversationId]}
-          onClick={({ key }) => setCurrentConversationId(key as string)}
-          style={{ borderRight: 0 }}
-        >
-          {conversations.map((conv) => (
-            <Menu.Item key={conv.id} icon={<MessageOutlined />}>
-              {conv.title}
-            </Menu.Item>
-          ))}
-        </Menu>
-      </Sider>
       <Layout>
         <Content
           style={{

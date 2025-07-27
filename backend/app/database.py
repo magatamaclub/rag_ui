@@ -61,12 +61,62 @@ def check_tables_exist() -> bool:
         return False
 
 
+def create_admin_user():
+    """创建默认管理员用户（如果不存在）"""
+    try:
+        from .models import User, UserRole
+        from .auth import get_password_hash
+
+        db = SessionLocal()
+        try:
+            # 检查是否已存在管理员用户
+            admin_user = (
+                db.query(User).filter(User.role == UserRole.ADMIN).first()
+            )
+            if admin_user:
+                logger.info("✅ Admin user already exists")
+                return
+
+            # 创建默认管理员用户
+            admin_username = "admin"
+            admin_email = "admin@ragui.com"
+            admin_password = "admin123"  # 在生产环境中应该使用更安全的密码
+
+            hashed_password = get_password_hash(admin_password)
+            admin_user = User(
+                username=admin_username,
+                email=admin_email,
+                hashed_password=hashed_password,
+                role=UserRole.ADMIN,
+                is_active=True,
+            )
+            db.add(admin_user)
+            db.commit()
+            logger.info("✅ Default admin user created successfully")
+            logger.info(f"   Username: {admin_username}")
+            logger.info(f"   Password: {admin_password}")
+            logger.info("   Please change the default password after first login!")
+
+        finally:
+            db.close()
+
+    except Exception as e:
+        logger.error(f"❌ Error creating admin user: {e}")
+
+
 def init_database():
     """初始化数据库，创建表结构"""
     try:
         logger.info("🏗️ Creating missing tables...")
         # 跳过实际的表创建，避免psycopg2内存错误
         logger.warning("⚠️ Skipping table creation due to driver issues")
+
+        # 尝试创建管理员用户
+        try:
+            create_admin_user()
+        except Exception as e:
+            logger.warning(f"⚠️ Could not create admin user: {e}")
+
         logger.info("🎉 Database initialization completed (skipped - driver issues)")
 
     except Exception as e:

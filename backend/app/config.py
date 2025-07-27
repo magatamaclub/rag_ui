@@ -37,6 +37,27 @@ class Settings:
             os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
         )
 
+        # Default admin user configuration
+        self.DEFAULT_ADMIN_USERNAME: str = os.getenv("DEFAULT_ADMIN_USERNAME", "admin")
+        self.DEFAULT_ADMIN_EMAIL: str = os.getenv(
+            "DEFAULT_ADMIN_EMAIL", "admin@example.com"
+        )
+        self.DEFAULT_ADMIN_PASSWORD: str = os.getenv(
+            "DEFAULT_ADMIN_PASSWORD", "admin123"
+        )
+
+        # Logging configuration
+        self.LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO").upper()
+
+        # CORS configuration
+        cors_origins = os.getenv("CORS_ORIGINS", "")
+        self.CORS_ORIGINS: list = [
+            origin.strip() for origin in cors_origins.split(",") if origin.strip()
+        ]
+
+        # Frontend configuration
+        self.REACT_APP_API_BASE_URL: str = os.getenv("REACT_APP_API_BASE_URL", "")
+
         # Build database URL
         self._database_url: Optional[str] = os.getenv("DATABASE_URL")
 
