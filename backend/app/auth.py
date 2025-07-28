@@ -144,3 +144,56 @@ def get_current_admin_user(
             detail="Admin privileges required",
         )
     return current_user
+
+
+def get_all_users(db: Session, skip: int = 0, limit: int = 100):
+    """Get all users with pagination."""
+    return db.query(User).offset(skip).limit(limit).all()
+
+
+def get_users_count(db: Session) -> int:
+    """Get total count of users."""
+    return db.query(User).count()
+
+
+def update_user(
+    db: Session,
+    user_id: int,
+    username: Optional[str] = None,
+    email: Optional[str] = None,
+    role: Optional[UserRole] = None,
+    is_active: Optional[bool] = None,
+) -> Optional[User]:
+    """Update user information."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        return None
+    
+    if username is not None:
+        setattr(user, "username", username)
+    if email is not None:
+        setattr(user, "email", email)
+    if role is not None:
+        setattr(user, "role", role)
+    if is_active is not None:
+        setattr(user, "is_active", is_active)
+    
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def delete_user(db: Session, user_id: int) -> bool:
+    """Delete a user."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        return False
+    
+    db.delete(user)
+    db.commit()
+    return True
+
+
+def get_user_by_id(db: Session, user_id: int) -> Optional[User]:
+    """Get user by ID."""
+    return db.query(User).filter(User.id == user_id).first()

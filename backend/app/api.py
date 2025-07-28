@@ -16,11 +16,18 @@ from .auth import (
     create_user,
     get_user,
     get_user_by_email,
+    get_all_users,
+    get_users_count,
+    update_user,
+    delete_user,
+    get_user_by_id,
 )
 from .schemas import (
     UserCreate,
+    UserUpdate,
     UserLogin,
     UserResponse,
+    UserListResponse,
     Token,
     DifyAppCreate,
     DifyAppUpdate,
@@ -156,6 +163,173 @@ async def get_current_user_info(current_user: User = Depends(get_current_active_
 async def protected_route(current_user: User = Depends(get_current_active_user)):
     """Example protected route that requires authentication."""
     return {"message": f"Hello {current_user.username}, this is a protected route!"}
+
+
+# User Management Endpoints (Admin Only)
+@router.get(
+    "/users",
+    response_model=UserListResponse,
+    tags=["user_management"],
+    summary="获取用户列表",
+    description="""
+    获取所有用户的列表（仅管理员）。
+    
+    支持分页参数：
+    - page: 页码，从1开始
+    - size: 每页数量，默认20
+    """,
+)
+async def get_users(
+    page: int = 1,
+    size: int = 20,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user),
+):
+    """Get all users with pagination (Admin only)."""
+    skip = (page - 1) * size
+    users = get_all_users(db, skip=skip, limit=size)
+    total = get_users_count(db)
+    
+    return UserListResponse(
+        users=users,
+        total=total,
+        page=page,
+        size=size
+    )
+
+
+@router.get(
+    "/users/{user_id}",
+    response_model=UserResponse,
+    tags=["user_management"],
+    summary="获取用户详情",
+    description="获取指定用户的详细信息（仅管理员）",
+)
+async def get_user_detail(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user),
+):
+    """Get user details by ID (Admin only)."""
+    user = get_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+
+@router.post(
+    "/users",
+    response_model=UserResponse,
+    tags=["user_management"],
+    summary="创建新用户",
+    description="""
+    创建新用户（仅管理员）。
+    
+    注意：
+    - 邮箱是必填项且必须是有效的邮箱格式
+    - 用户名必须唯一
+    - 邮箱必须唯一
+    """,
+)
+async def create_user_admin(
+    user: UserCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user),
+):
+    """Create a new user (Admin only)."""
+    # Check if user already exists
+    existing_user = get_user(db, user.username)
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Username already registered")
+
+    existing_email = get_user_by_email(db, user.email)
+    if existing_email:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    # Create new user
+    role = user.role or UserRole.USER
+    db_user = create_user(db, user.username, user.email, user.password, role)
+    return db_user
+
+
+@router.put(
+    "/users/{user_id}",
+    response_model=UserResponse,
+    tags=["user_management"],
+    summary="更新用户信息",
+    description="更新指定用户的信息（仅管理员）",
+)
+async def update_user_admin(
+    user_id: int,
+    user_update: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user),
+):
+    """Update user information (Admin only)."""
+    # Check if user exists
+    existing_user = get_user_by_id(db, user_id)
+    if not existing_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check username uniqueness if updating username
+    if user_update.username and user_update.username != existing_user.username:
+        username_exists = get_user(db, user_update.username)
+        if username_exists:
+            raise HTTPException(status_code=400, detail="Username already taken")
+    
+    # Check email uniqueness if updating email
+    if user_update.email and user_update.email != existing_user.email:
+        email_exists = get_user_by_email(db, user_update.email)
+        if email_exists:
+            raise HTTPException(status_code=400, detail="Email already taken")
+    
+    # Update user
+    updated_user = update_user(
+        db,
+        user_id,
+        username=user_update.username,
+        email=user_update.email,
+        role=user_update.role,
+        is_active=user_update.is_active,
+    )
+    
+    return updated_user
+
+
+@router.delete(
+    "/users/{user_id}",
+    tags=["user_management"],
+    summary="删除用户",
+    description="""
+    删除指定用户（仅管理员）。
+    
+    注意：管理员不能删除自己的账户。
+    """,
+)
+async def delete_user_admin(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user),
+):
+    """Delete a user (Admin only)."""
+    # Prevent admin from deleting themselves
+    if user_id == current_user.id:
+        raise HTTPException(
+            status_code=400, 
+            detail="Cannot delete your own account"
+        )
+    
+    # Check if user exists
+    user = get_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Delete user
+    success = delete_user(db, user_id)
+    if success:
+        return {"message": "User deleted successfully"}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to delete user")
 
 
 # Dify Configuration Endpoints

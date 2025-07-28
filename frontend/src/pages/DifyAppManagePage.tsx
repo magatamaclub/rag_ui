@@ -65,7 +65,7 @@ const DifyAppManagePage: React.FC = () => {
       try {
         const currentUser = await getCurrentUser();
         setUser(currentUser);
-        if (currentUser.role !== "admin") {
+        if (!currentUser || currentUser.role !== "admin") {
           message.error("需要管理员权限才能访问此页面");
           window.location.href = "/chat";
           return;
@@ -82,16 +82,16 @@ const DifyAppManagePage: React.FC = () => {
   const loadApps = async () => {
     setLoading(true);
     try {
-      const response = await authenticatedRequest("/api/v1/dify-apps");
-      if (response.ok) {
-        const data = await response.json();
-        setApps(data);
-      } else {
-        message.error("加载应用列表失败");
-      }
-    } catch (error) {
+      const data = await authenticatedRequest("/api/v1/dify-apps");
+      setApps(data);
+    } catch (error: any) {
       console.error("Error loading apps:", error);
-      message.error("加载应用列表时发生错误");
+      if (error.message?.includes("401") || error.response?.status === 401) {
+        message.error("认证失败，请重新登录");
+        window.location.href = "/login";
+      } else {
+        message.error("加载应用列表时发生错误");
+      }
     } finally {
       setLoading(false);
     }
@@ -116,46 +116,44 @@ const DifyAppManagePage: React.FC = () => {
         : "/api/v1/dify-apps";
       const method = editingApp ? "PUT" : "POST";
 
-      const response = await authenticatedRequest(url, {
+      const data = await authenticatedRequest(url, {
         method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(values),
+        data: values,
       });
 
-      if (response.ok) {
-        message.success(editingApp ? "应用更新成功" : "应用创建成功");
-        setModalVisible(false);
-        await loadApps();
-      } else {
-        const errorData = await response.json();
-        message.error(errorData.detail || "操作失败");
-      }
-    } catch (error) {
+      message.success(editingApp ? "应用更新成功" : "应用创建成功");
+      setModalVisible(false);
+      await loadApps();
+    } catch (error: any) {
       console.error("Error submitting app:", error);
-      message.error("操作时发生错误");
+      if (error.message?.includes("401") || error.response?.status === 401) {
+        message.error("认证失败，请重新登录");
+        window.location.href = "/login";
+      } else {
+        message.error(error.message || "操作时发生错误");
+      }
     }
   };
 
   const handleDeleteApp = async (appId: number) => {
     try {
-      const response = await authenticatedRequest(
+      await authenticatedRequest(
         `/api/v1/dify-apps/${appId}`,
         {
           method: "DELETE",
         }
       );
 
-      if (response.ok) {
-        message.success("应用删除成功");
-        await loadApps();
-      } else {
-        message.error("删除应用失败");
-      }
-    } catch (error) {
+      message.success("应用删除成功");
+      await loadApps();
+    } catch (error: any) {
       console.error("Error deleting app:", error);
-      message.error("删除应用时发生错误");
+      if (error.message?.includes("401") || error.response?.status === 401) {
+        message.error("认证失败，请重新登录");
+        window.location.href = "/login";
+      } else {
+        message.error("删除应用时发生错误");
+      }
     }
   };
 

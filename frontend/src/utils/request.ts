@@ -42,7 +42,7 @@ export async function request(url: string, options: RequestOptions = {}) {
   }
 
   // 添加 token 到请求头
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('access_token');
   if (token) {
     config.headers = {
       ...config.headers,

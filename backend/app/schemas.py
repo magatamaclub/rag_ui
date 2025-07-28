@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel
 from datetime import datetime
 from .models import UserRole, DifyAppType
@@ -12,6 +12,13 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
     role: Optional[UserRole] = UserRole.USER
+
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[str] = None
+    role: Optional[UserRole] = None
+    is_active: Optional[bool] = None
 
 
 class UserLogin(BaseModel):
@@ -28,6 +35,13 @@ class UserResponse(UserBase):
 
     class Config:
         from_attributes = True
+
+
+class UserListResponse(BaseModel):
+    users: List[UserResponse]
+    total: int
+    page: int
+    size: int
 
 
 class Token(BaseModel):

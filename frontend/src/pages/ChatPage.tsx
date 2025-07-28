@@ -302,6 +302,12 @@ const ChatPage: React.FC = () => {
     ...(user?.role === "admin"
       ? [
           {
+            key: "manage-users",
+            icon: <UserOutlined />,
+            label: "用户管理",
+            onClick: () => (window.location.href = "/user-manage"),
+          },
+          {
             key: "manage-apps",
             icon: <SettingOutlined />,
             label: "管理Dify应用",

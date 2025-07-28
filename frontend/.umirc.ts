@@ -32,6 +32,10 @@ export default defineConfig({
       component: '@/pages/DifyAppManagePage',
     },
     {
+      path: '/user-manage',
+      component: '@/pages/UserManagePage',
+    },
+    {
       path: '/home',
       component: '@/pages/IndexPage',
     },
