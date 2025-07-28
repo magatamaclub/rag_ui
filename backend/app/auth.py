@@ -168,7 +168,7 @@ def update_user(
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         return None
-    
+
     if username is not None:
         setattr(user, "username", username)
     if email is not None:
@@ -177,7 +177,7 @@ def update_user(
         setattr(user, "role", role)
     if is_active is not None:
         setattr(user, "is_active", is_active)
-    
+
     db.commit()
     db.refresh(user)
     return user
@@ -188,7 +188,7 @@ def delete_user(db: Session, user_id: int) -> bool:
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         return False
-    
+
     db.delete(user)
     db.commit()
     return True

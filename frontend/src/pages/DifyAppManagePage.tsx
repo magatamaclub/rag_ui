@@ -137,12 +137,9 @@ const DifyAppManagePage: React.FC = () => {
 
   const handleDeleteApp = async (appId: number) => {
     try {
-      await authenticatedRequest(
-        `/api/v1/dify-apps/${appId}`,
-        {
-          method: "DELETE",
-        }
-      );
+      await authenticatedRequest(`/api/v1/dify-apps/${appId}`, {
+        method: "DELETE",
+      });
 
       message.success("应用删除成功");
       await loadApps();

@@ -189,13 +189,8 @@ async def get_users(
     skip = (page - 1) * size
     users = get_all_users(db, skip=skip, limit=size)
     total = get_users_count(db)
-    
-    return UserListResponse(
-        users=users,
-        total=total,
-        page=page,
-        size=size
-    )
+
+    return UserListResponse(users=users, total=total, page=page, size=size)
 
 
 @router.get(
@@ -270,19 +265,19 @@ async def update_user_admin(
     existing_user = get_user_by_id(db, user_id)
     if not existing_user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     # Check username uniqueness if updating username
     if user_update.username and user_update.username != existing_user.username:
         username_exists = get_user(db, user_update.username)
         if username_exists:
             raise HTTPException(status_code=400, detail="Username already taken")
-    
+
     # Check email uniqueness if updating email
     if user_update.email and user_update.email != existing_user.email:
         email_exists = get_user_by_email(db, user_update.email)
         if email_exists:
             raise HTTPException(status_code=400, detail="Email already taken")
-    
+
     # Update user
     updated_user = update_user(
         db,
@@ -292,7 +287,7 @@ async def update_user_admin(
         role=user_update.role,
         is_active=user_update.is_active,
     )
-    
+
     return updated_user
 
 
@@ -314,16 +309,13 @@ async def delete_user_admin(
     """Delete a user (Admin only)."""
     # Prevent admin from deleting themselves
     if user_id == current_user.id:
-        raise HTTPException(
-            status_code=400, 
-            detail="Cannot delete your own account"
-        )
-    
+        raise HTTPException(status_code=400, detail="Cannot delete your own account")
+
     # Check if user exists
     user = get_user_by_id(db, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     # Delete user
     success = delete_user(db, user_id)
     if success:

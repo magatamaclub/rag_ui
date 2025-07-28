@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Table,
   Button,
@@ -16,7 +16,7 @@ import {
   Tag,
   Row,
   Col,
-} from 'antd';
+} from "antd";
 import {
   PlusOutlined,
   EditOutlined,
@@ -24,8 +24,8 @@ import {
   UserOutlined,
   MailOutlined,
   SafetyOutlined,
-} from '@ant-design/icons';
-import { history } from 'umi';
+} from "@ant-design/icons";
+import { history } from "umi";
 import {
   getUserList,
   createUser,
@@ -35,8 +35,8 @@ import {
   UserCreate,
   UserUpdate,
   UserListResponse,
-} from '../utils/userApi';
-import { getCurrentUser, User as AuthUser } from '../utils/auth';
+} from "../utils/userApi";
+import { getCurrentUser, User as AuthUser } from "../utils/auth";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -64,16 +64,16 @@ const UserManagePage: React.FC = () => {
     try {
       const user = await getCurrentUser();
       setCurrentUser(user);
-      if (!user || user.role !== 'admin') {
-        message.error('需要管理员权限才能访问此页面');
-        history.push('/chat');
+      if (!user || user.role !== "admin") {
+        message.error("需要管理员权限才能访问此页面");
+        history.push("/chat");
         return;
       }
       await loadUsers();
     } catch (error) {
-      console.error('获取用户信息失败:', error);
-      message.error('获取用户信息失败，请重新登录');
-      history.push('/login');
+      console.error("获取用户信息失败:", error);
+      message.error("获取用户信息失败，请重新登录");
+      history.push("/login");
     }
   };
 
@@ -88,12 +88,12 @@ const UserManagePage: React.FC = () => {
         total: response.total,
       });
     } catch (error: any) {
-      console.error('加载用户列表失败:', error);
-      if (error.message?.includes('401') || error.response?.status === 401) {
-        message.error('认证失败，请重新登录');
-        history.push('/login');
+      console.error("加载用户列表失败:", error);
+      if (error.message?.includes("401") || error.response?.status === 401) {
+        message.error("认证失败，请重新登录");
+        history.push("/login");
       } else {
-        message.error('加载用户列表失败');
+        message.error("加载用户列表失败");
       }
     } finally {
       setLoading(false);
@@ -103,7 +103,7 @@ const UserManagePage: React.FC = () => {
   const handleCreateUser = () => {
     setEditingUser(null);
     form.resetFields();
-    form.setFieldsValue({ role: 'user', is_active: true });
+    form.setFieldsValue({ role: "user", is_active: true });
     setModalVisible(true);
   };
 
@@ -129,7 +129,7 @@ const UserManagePage: React.FC = () => {
           is_active: values.is_active,
         };
         await updateUser(editingUser.id, updateData);
-        message.success('用户更新成功');
+        message.success("用户更新成功");
       } else {
         // 创建用户
         const createData: UserCreate = {
@@ -139,17 +139,17 @@ const UserManagePage: React.FC = () => {
           role: values.role,
         };
         await createUser(createData);
-        message.success('用户创建成功');
+        message.success("用户创建成功");
       }
       setModalVisible(false);
       await loadUsers(pagination.current, pagination.pageSize);
     } catch (error: any) {
-      console.error('操作失败:', error);
-      if (error.message?.includes('401') || error.response?.status === 401) {
-        message.error('认证失败，请重新登录');
-        history.push('/login');
+      console.error("操作失败:", error);
+      if (error.message?.includes("401") || error.response?.status === 401) {
+        message.error("认证失败，请重新登录");
+        history.push("/login");
       } else {
-        message.error(error.message || '操作失败');
+        message.error(error.message || "操作失败");
       }
     }
   };
@@ -157,15 +157,15 @@ const UserManagePage: React.FC = () => {
   const handleDeleteUser = async (userId: number) => {
     try {
       await deleteUser(userId);
-      message.success('用户删除成功');
+      message.success("用户删除成功");
       await loadUsers(pagination.current, pagination.pageSize);
     } catch (error: any) {
-      console.error('删除用户失败:', error);
-      if (error.message?.includes('401') || error.response?.status === 401) {
-        message.error('认证失败，请重新登录');
-        history.push('/login');
+      console.error("删除用户失败:", error);
+      if (error.message?.includes("401") || error.response?.status === 401) {
+        message.error("认证失败，请重新登录");
+        history.push("/login");
       } else {
-        message.error(error.message || '删除用户失败');
+        message.error(error.message || "删除用户失败");
       }
     }
   };
@@ -176,15 +176,15 @@ const UserManagePage: React.FC = () => {
 
   const columns = [
     {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
+      title: "ID",
+      dataIndex: "id",
+      key: "id",
       width: 80,
     },
     {
-      title: '用户名',
-      dataIndex: 'username',
-      key: 'username',
+      title: "用户名",
+      dataIndex: "username",
+      key: "username",
       render: (text: string) => (
         <Space>
           <UserOutlined />
@@ -193,9 +193,9 @@ const UserManagePage: React.FC = () => {
       ),
     },
     {
-      title: '邮箱',
-      dataIndex: 'email',
-      key: 'email',
+      title: "邮箱",
+      dataIndex: "email",
+      key: "email",
       render: (text: string) => (
         <Space>
           <MailOutlined />
@@ -204,35 +204,38 @@ const UserManagePage: React.FC = () => {
       ),
     },
     {
-      title: '角色',
-      dataIndex: 'role',
-      key: 'role',
+      title: "角色",
+      dataIndex: "role",
+      key: "role",
       render: (role: string) => (
-        <Tag color={role === 'admin' ? 'red' : 'blue'} icon={<SafetyOutlined />}>
-          {role === 'admin' ? '管理员' : '普通用户'}
+        <Tag
+          color={role === "admin" ? "red" : "blue"}
+          icon={<SafetyOutlined />}
+        >
+          {role === "admin" ? "管理员" : "普通用户"}
         </Tag>
       ),
     },
     {
-      title: '状态',
-      dataIndex: 'is_active',
-      key: 'is_active',
+      title: "状态",
+      dataIndex: "is_active",
+      key: "is_active",
       render: (isActive: boolean) => (
-        <Tag color={isActive ? 'green' : 'red'}>
-          {isActive ? '激活' : '禁用'}
+        <Tag color={isActive ? "green" : "red"}>
+          {isActive ? "激活" : "禁用"}
         </Tag>
       ),
     },
     {
-      title: '创建时间',
-      dataIndex: 'created_at',
-      key: 'created_at',
+      title: "创建时间",
+      dataIndex: "created_at",
+      key: "created_at",
       render: (text: string) =>
-        text ? new Date(text).toLocaleString('zh-CN') : '-',
+        text ? new Date(text).toLocaleString("zh-CN") : "-",
     },
     {
-      title: '操作',
-      key: 'action',
+      title: "操作",
+      key: "action",
       render: (_: any, record: User) => (
         <Space size="middle">
           <Button
@@ -267,8 +270,14 @@ const UserManagePage: React.FC = () => {
   ];
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0' }}>
+    <Layout style={{ minHeight: "100vh" }}>
+      <Header
+        style={{
+          background: "#fff",
+          padding: "0 24px",
+          borderBottom: "1px solid #f0f0f0",
+        }}
+      >
         <Row justify="space-between" align="middle">
           <Col>
             <Title level={3} style={{ margin: 0 }}>
@@ -276,13 +285,11 @@ const UserManagePage: React.FC = () => {
             </Title>
           </Col>
           <Col>
-            <Button onClick={() => history.push('/chat')}>
-              返回主页
-            </Button>
+            <Button onClick={() => history.push("/chat")}>返回主页</Button>
           </Col>
         </Row>
       </Header>
-      <Content style={{ padding: '24px' }}>
+      <Content style={{ padding: "24px" }}>
         <Card>
           <Space style={{ marginBottom: 16 }}>
             <Button
@@ -293,7 +300,7 @@ const UserManagePage: React.FC = () => {
               添加用户
             </Button>
           </Space>
-          
+
           <Table
             columns={columns}
             dataSource={users}
@@ -314,24 +321,20 @@ const UserManagePage: React.FC = () => {
         </Card>
 
         <Modal
-          title={editingUser ? '编辑用户' : '添加用户'}
+          title={editingUser ? "编辑用户" : "添加用户"}
           open={modalVisible}
           onCancel={() => setModalVisible(false)}
           footer={null}
           width={600}
         >
-          <Form
-            form={form}
-            layout="vertical"
-            onFinish={handleSubmit}
-          >
+          <Form form={form} layout="vertical" onFinish={handleSubmit}>
             <Form.Item
               label="用户名"
               name="username"
               rules={[
-                { required: true, message: '请输入用户名' },
-                { min: 3, message: '用户名至少3个字符' },
-                { max: 20, message: '用户名最多20个字符' },
+                { required: true, message: "请输入用户名" },
+                { min: 3, message: "用户名至少3个字符" },
+                { max: 20, message: "用户名最多20个字符" },
               ]}
             >
               <Input placeholder="请输入用户名" />
@@ -341,8 +344,8 @@ const UserManagePage: React.FC = () => {
               label="邮箱"
               name="email"
               rules={[
-                { required: true, message: '请输入邮箱' },
-                { type: 'email', message: '请输入有效的邮箱地址' },
+                { required: true, message: "请输入邮箱" },
+                { type: "email", message: "请输入有效的邮箱地址" },
               ]}
             >
               <Input placeholder="请输入邮箱地址" />
@@ -353,8 +356,8 @@ const UserManagePage: React.FC = () => {
                 label="密码"
                 name="password"
                 rules={[
-                  { required: true, message: '请输入密码' },
-                  { min: 6, message: '密码至少6个字符' },
+                  { required: true, message: "请输入密码" },
+                  { min: 6, message: "密码至少6个字符" },
                 ]}
               >
                 <Input.Password placeholder="请输入密码" />
@@ -364,7 +367,7 @@ const UserManagePage: React.FC = () => {
             <Form.Item
               label="角色"
               name="role"
-              rules={[{ required: true, message: '请选择角色' }]}
+              rules={[{ required: true, message: "请选择角色" }]}
             >
               <Select placeholder="请选择用户角色">
                 <Option value="user">普通用户</Option>
@@ -378,21 +381,16 @@ const UserManagePage: React.FC = () => {
                 name="is_active"
                 valuePropName="checked"
               >
-                <Switch
-                  checkedChildren="激活"
-                  unCheckedChildren="禁用"
-                />
+                <Switch checkedChildren="激活" unCheckedChildren="禁用" />
               </Form.Item>
             )}
 
             <Form.Item>
               <Space>
                 <Button type="primary" htmlType="submit">
-                  {editingUser ? '更新' : '创建'}
+                  {editingUser ? "更新" : "创建"}
                 </Button>
-                <Button onClick={() => setModalVisible(false)}>
-                  取消
-                </Button>
+                <Button onClick={() => setModalVisible(false)}>取消</Button>
               </Space>
             </Form.Item>
           </Form>
