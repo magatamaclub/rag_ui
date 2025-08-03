@@ -42,6 +42,7 @@ import {
   UserListResponse,
 } from "../utils/userApi";
 import { getCurrentUser, User as AuthUser, logout } from "../utils/auth";
+import AuthGuard from "../components/AuthGuard";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -405,4 +406,12 @@ const UserManagePage: React.FC = () => {
   );
 };
 
-export default UserManagePage;
+const ProtectedUserManagePage: React.FC = () => {
+  return (
+    <AuthGuard>
+      <UserManagePage />
+    </AuthGuard>
+  );
+};
+
+export default ProtectedUserManagePage;

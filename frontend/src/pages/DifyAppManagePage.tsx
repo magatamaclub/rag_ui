@@ -29,6 +29,7 @@ import {
   User,
   logout,
 } from "../utils/auth";
+import AuthGuard from "../components/AuthGuard";
 
 const { Header, Content } = Layout;
 const { Option } = Select;
@@ -384,4 +385,12 @@ const DifyAppManagePage: React.FC = () => {
   );
 };
 
-export default DifyAppManagePage;
+const ProtectedDifyAppManagePage: React.FC = () => {
+  return (
+    <AuthGuard>
+      <DifyAppManagePage />
+    </AuthGuard>
+  );
+};
+
+export default ProtectedDifyAppManagePage;
