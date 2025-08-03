@@ -12,14 +12,23 @@ import {
   Space,
   Tag,
   Popconfirm,
+  Dropdown,
 } from "antd";
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
   UserOutlined,
+  HomeOutlined,
+  MessageOutlined,
+  LogoutOutlined,
 } from "@ant-design/icons";
-import { authenticatedRequest, getCurrentUser, User } from "../utils/auth";
+import {
+  authenticatedRequest,
+  getCurrentUser,
+  User,
+  logout,
+} from "../utils/auth";
 
 const { Header, Content } = Layout;
 const { Option } = Select;
@@ -227,6 +236,36 @@ const DifyAppManagePage: React.FC = () => {
     return null;
   }
 
+  const handleLogout = () => {
+    logout();
+  };
+
+  const userMenuItems = [
+    {
+      key: "profile",
+      icon: <UserOutlined />,
+      label: user.username || "用户",
+    },
+    {
+      key: "chat",
+      icon: <MessageOutlined />,
+      label: "聊天系统",
+      onClick: () => (window.location.href = "/chat"),
+    },
+    {
+      key: "user-manage",
+      icon: <UserOutlined />,
+      label: "用户管理",
+      onClick: () => (window.location.href = "/user-manage"),
+    },
+    {
+      key: "logout",
+      icon: <LogoutOutlined />,
+      label: "退出登录",
+      onClick: handleLogout,
+    },
+  ];
+
   return (
     <Layout style={{ minHeight: "100vh" }}>
       <Header
@@ -239,10 +278,21 @@ const DifyAppManagePage: React.FC = () => {
           borderBottom: "1px solid #f0f0f0",
         }}
       >
-        <h2 style={{ margin: 0, color: "#1890ff" }}>Dify 应用管理</h2>
-        <Button type="text" icon={<UserOutlined />}>
-          {user.username} (管理员)
-        </Button>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <h2 style={{ margin: 0, color: "#1890ff" }}>Dify 应用管理</h2>
+          <Button
+            type="default"
+            icon={<HomeOutlined />}
+            onClick={() => (window.location.href = "/chat")}
+          >
+            返回聊天
+          </Button>
+        </div>
+        <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
+          <Button type="text" icon={<UserOutlined />}>
+            {user.username} (管理员)
+          </Button>
+        </Dropdown>
       </Header>
       <Content style={{ padding: "24px" }}>
         <Card

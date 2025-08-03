@@ -3,7 +3,7 @@
 ## 当前配置状态 ✅
 
 ### 前端配置
-- **Node.js版本**: 20.19.4 (通过 Volta 管理)
+- **Node.js版本**: 20.19.4 (通过 NVM 管理)
 - **开发服务器**: http://localhost:8000 ✅ 运行中
 - **API 地址**: http://localhost:8001 ✅ 已更新
 
@@ -24,8 +24,8 @@
 
 1. **Node.js 版本兼容性问题**
    - 问题: UmiJS 4.4.11 与 Node.js 24 不兼容
-   - 解决: 使用 Volta 固定 Node.js 版本为 20.19.4
-   - 文件: `package.json`, `.nvmrc`, `VOLTA_GUIDE.md`
+   - 解决: 使用 NVM 固定 Node.js 版本为 20.19.4
+   - 文件: `package.json`, `.nvmrc`, `NVM_GUIDE.md`
 
 2. **前端API地址不匹配**
    - 问题: 前端配置使用 8000 端口，后端运行在 8001
@@ -35,7 +35,7 @@
 3. **环境变量配置**
    - 完善了 `.env.example` 文件
    - 添加了完整的环境变量文档
-   - 配置了 Volta 和 Docker 环境
+   - 配置了 NVM 和 Docker 环境
 
 4. **Swagger API文档开发** 🆕
    - 问题: 缺少完整的API文档和测试界面
@@ -101,7 +101,7 @@
 ## 文件变更记录
 
 ### 新增文件
-- `VOLTA_GUIDE.md` - Volta 使用指南
+- `NVM_GUIDE.md` - NVM 使用指南
 - `ENVIRONMENT_VARIABLES.md` - 环境变量文档  
 - `frontend/.env` - 前端环境变量配置
 - `package.json` (根目录) - 项目级配置
@@ -111,7 +111,7 @@
 - `backend/app/api_models.py` - API模型和示例 🆕
 
 ### 修改文件
-- `frontend/package.json` - 添加Volta配置，更新脚本
+- `frontend/package.json` - 移除依赖管理配置，添加engines版本信息，更新脚本
 - `backend/app/config.py` - 添加URL编码，新增配置项
 - `backend/app/database.py` - 改进数据库连接检查
 - `backend/.env` - 更新端口配置
@@ -122,7 +122,7 @@
 ## 验证清单
 
 ### 前端 ✅
-- [x] Node.js 版本正确 (20.19.4)
+- [x] NVM配置正确
 - [x] 依赖安装成功
 - [x] 开发服务器启动 (localhost:8000)
 - [x] API地址配置正确 (localhost:8001)
@@ -137,7 +137,7 @@
 
 ### 配置 ✅
 - [x] 环境变量文档完整
-- [x] Volta配置正确
+- [x] NVM配置正确
 - [x] Docker配置更新
 - [x] 安全配置建议
 

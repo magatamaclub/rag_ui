@@ -19,6 +19,7 @@ import {
   UserOutlined,
   LogoutOutlined,
   SettingOutlined,
+  ReloadOutlined,
 } from "@ant-design/icons";
 import {
   authenticatedRequest,
@@ -351,6 +352,11 @@ const ChatPage: React.FC = () => {
               placeholder="选择Dify应用"
               value={selectedAppId}
               onChange={setSelectedAppId}
+              notFoundContent={
+                difyApps.length === 0
+                  ? "暂无Dify应用，请先创建应用"
+                  : "无匹配应用"
+              }
             >
               {difyApps.map((app) => (
                 <Option key={app.id} value={app.id}>
@@ -358,6 +364,25 @@ const ChatPage: React.FC = () => {
                 </Option>
               ))}
             </Select>
+            <Button
+              size="small"
+              icon={<ReloadOutlined />}
+              onClick={async () => {
+                try {
+                  const appsResponse =
+                    await authenticatedRequest("/api/v1/dify-apps");
+                  if (appsResponse.ok) {
+                    const apps = await appsResponse.json();
+                    setDifyApps(apps);
+                    message.success(`已刷新应用列表 (${apps.length}个应用)`);
+                  }
+                } catch (error) {
+                  message.error("刷新应用列表失败");
+                }
+              }}
+            >
+              刷新
+            </Button>
           </div>
         </div>
         {user && (

@@ -16,6 +16,7 @@ import {
   Tag,
   Row,
   Col,
+  Dropdown,
 } from "antd";
 import {
   PlusOutlined,
@@ -24,6 +25,10 @@ import {
   UserOutlined,
   MailOutlined,
   SafetyOutlined,
+  HomeOutlined,
+  MessageOutlined,
+  LogoutOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 import { history } from "umi";
 import {
@@ -36,7 +41,7 @@ import {
   UserUpdate,
   UserListResponse,
 } from "../utils/userApi";
-import { getCurrentUser, User as AuthUser } from "../utils/auth";
+import { getCurrentUser, User as AuthUser, logout } from "../utils/auth";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;

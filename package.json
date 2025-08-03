@@ -18,7 +18,7 @@
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down"
   },
-  "volta": {
+  "engines": {
     "node": "20.19.4",
     "npm": "10.8.2"
   },
