@@ -452,40 +452,45 @@ async def chat(request: Request, current_user: User = Depends(get_current_active
         logger.error("❌ Missing query parameter")
         raise HTTPException(status_code=400, detail="Query is required")
 
-    # 如果没有提供conversation_id，生成一个新的UUID
-    if not conversation_id:
-        conversation_id = str(uuid.uuid4())
-        logger.info(f"🆔 Generated new conversation ID: {conversation_id}")
-    else:
-        # 验证conversation_id是否为有效的UUID格式
+    # Dify API conversation_id 处理逻辑：
+    # - 第一次对话：不传递 conversation_id，让 Dify 自动生成
+    # - 后续对话：传递前一次对话返回的 conversation_id
+    payload = {
+        "inputs": {},
+        "query": query,
+        "response_mode": "streaming",
+        "user": str(getattr(current_user, "username", "unknown")),
+    }
+
+    # 只有当conversation_id存在且有效时才添加到payload中
+    if conversation_id:
         try:
+            # 验证conversation_id是否为有效的UUID格式
             uuid.UUID(conversation_id)
-            logger.info(f"🆔 Using existing conversation ID: {conversation_id}")
+            payload["conversation_id"] = conversation_id
+            logger.info(f"🔄 Using existing conversation ID: {conversation_id}")
         except ValueError:
             logger.warning(
-                f"⚠️ Invalid UUID format, generating new one: {conversation_id}"
+                f"⚠️ Invalid conversation_id format, ignoring: {conversation_id}"
             )
-            conversation_id = str(uuid.uuid4())
-            logger.info(f"🆔 Generated new conversation ID: {conversation_id}")
+            logger.info("🆔 Starting new conversation (no conversation_id)")
+    else:
+        logger.info("🆔 Starting new conversation (no conversation_id)")
 
     url = f"{DIFY_API_URL}/chat-messages"
     headers = {
         "Authorization": f"Bearer {DIFY_API_KEY}",
         "Content-Type": "application/json",
     }
-    payload = {
-        "inputs": {},
-        "query": query,
-        "response_mode": "streaming",
-        "user": str(getattr(current_user, "username", "unknown")),
-        "conversation_id": conversation_id,
-    }
 
     logger.info("💬 Starting Dify chat API call")
     logger.info(f"🔗 URL: {url}")
     logger.info(f"👤 User: {getattr(current_user, 'username', 'unknown')}")
     logger.info(f"💭 Query: {query}")
-    logger.info(f"🔄 Conversation ID: {conversation_id}")
+    if "conversation_id" in payload:
+        logger.info(f"🔄 Conversation ID: {payload['conversation_id']}")
+    else:
+        logger.info("🆔 New conversation (no ID provided)")
     
     # 详细的请求日志 (通用聊天接口)
     logger.info("📤 === DIFY CHAT API REQUEST DETAILS ===")
@@ -778,40 +783,45 @@ async def chat_with_app(
         logger.error("❌ Missing query parameter")
         raise HTTPException(status_code=400, detail="Query is required")
 
-    # 如果没有提供conversation_id，生成一个新的UUID
-    if not conversation_id:
-        conversation_id = str(uuid.uuid4())
-        logger.info(f"🆔 Generated new conversation ID: {conversation_id}")
-    else:
-        # 验证conversation_id是否为有效的UUID格式
+    # Dify API conversation_id 处理逻辑：
+    # - 第一次对话：不传递 conversation_id，让 Dify 自动生成
+    # - 后续对话：传递前一次对话返回的 conversation_id
+    payload = {
+        "inputs": {},
+        "query": query,
+        "response_mode": "streaming",
+        "user": str(getattr(current_user, "username", "unknown")),
+    }
+
+    # 只有当conversation_id存在且有效时才添加到payload中
+    if conversation_id:
         try:
+            # 验证conversation_id是否为有效的UUID格式
             uuid.UUID(conversation_id)
-            logger.info(f"🆔 Using existing conversation ID: {conversation_id}")
+            payload["conversation_id"] = conversation_id
+            logger.info(f"🔄 Using existing conversation ID: {conversation_id}")
         except ValueError:
             logger.warning(
-                f"⚠️ Invalid UUID format, generating new one: {conversation_id}"
+                f"⚠️ Invalid conversation_id format, ignoring: {conversation_id}"
             )
-            conversation_id = str(uuid.uuid4())
-            logger.info(f"🆔 Generated new conversation ID: {conversation_id}")
+            logger.info("🆔 Starting new conversation (no conversation_id)")
+    else:
+        logger.info("🆔 Starting new conversation (no conversation_id)")
 
     url = f"{getattr(app, 'api_url', '')}/chat-messages"
     headers = {
         "Authorization": f"Bearer {getattr(app, 'api_key', '')}",
         "Content-Type": "application/json",
     }
-    payload = {
-        "inputs": {},
-        "query": query,
-        "response_mode": "streaming",
-        "user": str(getattr(current_user, "username", "unknown")),
-        "conversation_id": conversation_id,
-    }
 
     logger.info("💬 Starting Dify app chat API call")
     logger.info(f"🔗 URL: {url}")
     logger.info(f"👤 User: {getattr(current_user, 'username', 'unknown')}")
     logger.info(f"💭 Query: {query}")
-    logger.info(f"🔄 Conversation ID: {conversation_id}")
+    if "conversation_id" in payload:
+        logger.info(f"🔄 Conversation ID: {payload['conversation_id']}")
+    else:
+        logger.info("🆔 New conversation (no ID provided)")
     
     # 详细的请求日志
     logger.info("📤 === DIFY API REQUEST DETAILS ===")

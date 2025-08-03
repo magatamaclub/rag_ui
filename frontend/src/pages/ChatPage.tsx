@@ -169,7 +169,10 @@ const ChatPage: React.FC = () => {
         },
         body: JSON.stringify({
           query: newMessage.text,
-          conversation_id: currentConversationId,
+          // Only send conversation_id if we have an existing Dify conversation ID
+          ...(currentConversation?.id && currentConversation.id.includes("-")
+            ? { conversation_id: currentConversation.id }
+            : {}),
         }),
       });
 
@@ -181,39 +184,35 @@ const ChatPage: React.FC = () => {
       const decoder = new TextDecoder();
       let botResponseText = "";
       let currentRetrieverResults: RetrieverResult[] = [];
+      let conversationId = "";
 
       while (true) {
         const { done, value } = await reader!.read();
         if (done) break;
+
         const chunk = decoder.decode(value, { stream: true });
+        console.log("🔄 Received chunk:", chunk);
+
         // Dify sends data in 'data: {json}\n\n' format
         const lines = chunk
           .split("\n")
-          .filter((line) => line.startsWith("data:"));
+          .filter((line) => line.trim().startsWith("data:"));
+
         for (const line of lines) {
           try {
-            const data = JSON.parse(line.substring(5)); // Remove 'data: '
-            if (data.event === "text_chunk") {
-              botResponseText += data.answer;
-              setConversations((prev) =>
-                prev.map((conv) =>
-                  conv.id === currentConversationId
-                    ? {
-                        ...conv,
-                        messages: conv.messages.map((msg) =>
-                          msg.id === botMessagePlaceholder.id
-                            ? { ...msg, text: botResponseText }
-                            : msg
-                        ),
-                      }
-                    : conv
-                )
-              );
-            } else if (data.event === "llm_end") {
-              // Dify might send final answer in llm_end, but we already accumulated text_chunk
-              // If there's a final answer in llm_end, use it, otherwise rely on accumulated text_chunk
-              if (data.answer && data.answer.length > botResponseText.length) {
-                botResponseText = data.answer;
+            const jsonStr = line.substring(5).trim(); // Remove 'data: '
+            if (!jsonStr) continue;
+
+            const data = JSON.parse(jsonStr);
+            console.log("📦 Parsed data:", data);
+
+            // Handle different event types from Dify workflow
+            if (data.event === "message") {
+              // This is the main text content from the LLM
+              if (data.answer) {
+                botResponseText += data.answer;
+                console.log("💬 Adding text chunk:", data.answer);
+
                 setConversations((prev) =>
                   prev.map((conv) =>
                     conv.id === currentConversationId
@@ -229,29 +228,80 @@ const ChatPage: React.FC = () => {
                   )
                 );
               }
-            } else if (data.event === "retriever_result") {
-              currentRetrieverResults = data.retriever_results.map(
-                (res: any) => ({
-                  id: res.id,
-                  content: res.content,
-                  metadata: res.metadata,
-                })
-              );
-              setConversations((prev) =>
-                prev.map((conv) =>
-                  conv.id === currentConversationId
-                    ? { ...conv, retrieverResults: currentRetrieverResults }
-                    : conv
-                )
-              );
+            } else if (data.event === "workflow_started") {
+              // Store conversation ID for future requests
+              if (data.conversation_id) {
+                conversationId = data.conversation_id;
+                console.log("🆔 Got conversation ID:", conversationId);
+              }
+            } else if (data.event === "workflow_finished") {
+              console.log("✅ Workflow completed");
+              // Final update to ensure we have the complete response
+              if (data.data?.outputs?.answer) {
+                botResponseText = data.data.outputs.answer;
+                setConversations((prev) =>
+                  prev.map((conv) =>
+                    conv.id === currentConversationId
+                      ? {
+                          ...conv,
+                          messages: conv.messages.map((msg) =>
+                            msg.id === botMessagePlaceholder.id
+                              ? { ...msg, text: botResponseText }
+                              : msg
+                          ),
+                        }
+                      : conv
+                  )
+                );
+              }
+            } else if (
+              data.event === "node_finished" &&
+              data.data?.outputs?.result
+            ) {
+              // Handle knowledge retrieval results
+              const retrievalResults = data.data.outputs.result;
+              if (Array.isArray(retrievalResults)) {
+                currentRetrieverResults = retrievalResults.map(
+                  (res: any, index: number) => ({
+                    id: res.metadata?.segment_id || `result-${index}`,
+                    content: res.content || res.title || "",
+                    metadata: res.metadata || {},
+                  })
+                );
+
+                console.log(
+                  "📚 Knowledge retrieval results:",
+                  currentRetrieverResults
+                );
+
+                setConversations((prev) =>
+                  prev.map((conv) =>
+                    conv.id === currentConversationId
+                      ? { ...conv, retrieverResults: currentRetrieverResults }
+                      : conv
+                  )
+                );
+              }
+            } else if (data.event === "message_end") {
+              console.log("🏁 Message stream ended");
+              // Update conversation with Dify conversation ID if we got one
+              if (conversationId && conversationId !== currentConversationId) {
+                setConversations((prev) =>
+                  prev.map((conv) =>
+                    conv.id === currentConversationId
+                      ? {
+                          ...conv,
+                          id: conversationId,
+                          title: `Chat ${conversationId.slice(0, 8)}`,
+                        }
+                      : conv
+                  )
+                );
+                setCurrentConversationId(conversationId);
+              }
             }
           } catch (e) {
-            console.error(
-              "Error parsing Dify stream chunk:",
-              e,
-              "Chunk:",
-              line
-            );
+            console.error("Error parsing Dify stream chunk:", e, "Line:", line);
           }
         }
       }
