@@ -102,14 +102,11 @@ const ChatPage: React.FC = () => {
         setUser(currentUser);
 
         // 加载Dify应用
-        const appsResponse = await authenticatedRequest("/api/v1/dify-apps");
-        if (appsResponse.ok) {
-          const apps = await appsResponse.json();
-          setDifyApps(apps);
-          // 默认选择第一个应用
-          if (apps.length > 0) {
-            setSelectedAppId(apps[0].id);
-          }
+        const apps = await authenticatedRequest("/api/v1/dify-apps");
+        setDifyApps(apps);
+        // 默认选择第一个应用
+        if (apps.length > 0) {
+          setSelectedAppId(apps[0].id);
         }
       } catch (error) {
         console.error("获取用户信息或应用列表失败:", error);
@@ -162,19 +159,19 @@ const ChatPage: React.FC = () => {
     );
 
     try {
-      const response = await authenticatedRequest(
-        `/api/v1/chat/app/${selectedAppId}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            query: newMessage.text,
-            conversation_id: currentConversationId,
-          }),
-        }
-      );
+      // 直接使用 fetch 处理流式响应
+      const token = localStorage.getItem("access_token");
+      const response = await fetch(`/api/v1/chat/app/${selectedAppId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          query: newMessage.text,
+          conversation_id: currentConversationId,
+        }),
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -369,13 +366,9 @@ const ChatPage: React.FC = () => {
               icon={<ReloadOutlined />}
               onClick={async () => {
                 try {
-                  const appsResponse =
-                    await authenticatedRequest("/api/v1/dify-apps");
-                  if (appsResponse.ok) {
-                    const apps = await appsResponse.json();
-                    setDifyApps(apps);
-                    message.success(`已刷新应用列表 (${apps.length}个应用)`);
-                  }
+                  const apps = await authenticatedRequest("/api/v1/dify-apps");
+                  setDifyApps(apps);
+                  message.success(`已刷新应用列表 (${apps.length}个应用)`);
                 } catch (error) {
                   message.error("刷新应用列表失败");
                 }

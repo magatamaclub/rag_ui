@@ -25,10 +25,6 @@
     "typescript": "5.5.3",
     "@umijs/plugins": "^4.4.11"
   },
-  "engines": {
-    "node": "20.19.4",
-    "npm": "10.8.2"
-  },
   "author": "",
   "license": "ISC"
 }
