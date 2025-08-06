@@ -237,10 +237,33 @@ const ChatPage: React.FC = () => {
 
             // Handle different event types from Dify workflow
             if (data.event === "message") {
-              // This is the main text content from the LLM
+              // 处理新的Dify输出格式
+              let responseContent = "";
+              let ragData = null;
+
+              // 检查是否有新的格式的数据
               if (data.answer) {
-                botResponseText += data.answer;
-                console.log("💬 Adding text chunk:", data.answer);
+                try {
+                  // 尝试解析answer作为JSON
+                  const answerData = JSON.parse(data.answer);
+                  if (answerData.llm_response) {
+                    responseContent = answerData.llm_response;
+                    ragData = answerData.rag;
+                    console.log("📝 LLM Response:", responseContent);
+                    console.log("📚 RAG Data:", ragData);
+                  } else {
+                    // 如果不是新格式，使用原始answer
+                    responseContent = data.answer;
+                  }
+                } catch (e) {
+                  // 如果解析失败，使用原始answer
+                  responseContent = data.answer;
+                }
+              }
+
+              if (responseContent) {
+                botResponseText += responseContent;
+                console.log("💬 Adding text chunk:", responseContent);
 
                 setConversations((prev) =>
                   prev.map((conv) =>
@@ -261,6 +284,27 @@ const ChatPage: React.FC = () => {
                   )
                 );
               }
+
+              // 处理RAG数据
+              if (ragData && Array.isArray(ragData)) {
+                currentRetrieverResults = ragData.map(
+                  (res: any, index: number) => ({
+                    id: res.metadata?.segment_id || res.id || `result-${index}`,
+                    content: res.content || res.text || res.title || "",
+                    metadata: res.metadata || {},
+                  })
+                );
+
+                console.log("📚 Updated RAG results:", currentRetrieverResults);
+
+                setConversations((prev) =>
+                  prev.map((conv) =>
+                    conv.id === currentConversationId
+                      ? { ...conv, retrieverResults: currentRetrieverResults }
+                      : conv
+                  )
+                );
+              }
             } else if (data.event === "workflow_started") {
               // Store conversation ID for future requests
               if (data.conversation_id) {
@@ -269,9 +313,27 @@ const ChatPage: React.FC = () => {
               }
             } else if (data.event === "workflow_finished") {
               console.log("✅ Workflow completed");
-              // Final update to ensure we have the complete response
+              // 处理最终的工作流输出
               if (data.data?.outputs?.answer) {
-                botResponseText = data.data.outputs.answer;
+                let finalResponseContent = "";
+                let finalRagData = null;
+
+                try {
+                  // 尝试解析answer作为JSON
+                  const answerData = JSON.parse(data.data.outputs.answer);
+                  if (answerData.llm_response) {
+                    finalResponseContent = answerData.llm_response;
+                    finalRagData = answerData.rag;
+                    console.log("📝 Final LLM Response:", finalResponseContent);
+                    console.log("📚 Final RAG Data:", finalRagData);
+                  } else {
+                    finalResponseContent = data.data.outputs.answer;
+                  }
+                } catch (e) {
+                  finalResponseContent = data.data.outputs.answer;
+                }
+
+                botResponseText = finalResponseContent;
                 setConversations((prev) =>
                   prev.map((conv) =>
                     conv.id === currentConversationId
@@ -290,6 +352,26 @@ const ChatPage: React.FC = () => {
                       : conv
                   )
                 );
+
+                // 处理最终的RAG数据
+                if (finalRagData && Array.isArray(finalRagData)) {
+                  currentRetrieverResults = finalRagData.map(
+                    (res: any, index: number) => ({
+                      id:
+                        res.metadata?.segment_id || res.id || `result-${index}`,
+                      content: res.content || res.text || res.title || "",
+                      metadata: res.metadata || {},
+                    })
+                  );
+
+                  setConversations((prev) =>
+                    prev.map((conv) =>
+                      conv.id === currentConversationId
+                        ? { ...conv, retrieverResults: currentRetrieverResults }
+                        : conv
+                    )
+                  );
+                }
               }
             } else if (
               data.event === "node_finished" &&
